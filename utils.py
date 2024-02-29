@@ -10,7 +10,7 @@ from enkanetwork.model.equipments import EquipmentsType
 from PIL import Image, ImageChops, ImageFont, ImageOps
 from pydantic import BaseModel
 
-from prop_reference import ELEMENT_REFERENCE, RELIQUARY_STATS
+from .prop_reference import ELEMENT_REFERENCE, RELIQUARY_STATS
 
 
 class ActiveSet(BaseModel):
@@ -31,7 +31,7 @@ def check_asset(path: str, asset_url: str) -> None:
         try:
             with open(path, "wb") as f:
                 f.write(requests.get(asset_url).content)
-        except:
+        except Exception as e:
             raise Exception("There was an error downloading the asset.")
 
 
@@ -81,14 +81,14 @@ def scale_image(
 def get_font(font: Literal["normal"], size: int) -> ImageFont.FreeTypeFont:
     """Helper method to get a font."""
     return {
-        "normal": ImageFont.truetype("attributes/Fonts/JA-JP.TTF", size),
+        "normal": ImageFont.truetype("enka_card/attributes/Fonts/JA-JP.TTF", size),
         # Insert other fonts you'd like to use here, if any
-    }.get(font, ImageFont.truetype("attributes/Fonts/JA-JP.TTF", size))
+    }.get(font, ImageFont.truetype("enka_card/attributes/Fonts/JA-JP.TTF", size))
 
 
 def fade_character_art(im: Image) -> Image:
     # Load mask from attributes
-    mask = Image.open("attributes/Assets/enka_character_mask.png").convert("L")
+    mask = Image.open("enka_card/attributes/Assets/enka_character_mask.png").convert("L")
     mask = mask.resize((im.size[0], im.size[1]), Image.NEAREST)
 
     # Extract alpha channel from original image
@@ -107,7 +107,7 @@ def fade_character_art(im: Image) -> Image:
 
 def fade_asset_icon(im: Image, _type: Literal["artifact"]) -> Image:
     mask_fp = {
-        "artifact": "attributes/Assets/artifact_mask.png",
+        "artifact": "enka_card/attributes/Assets/artifact_mask.png",
         # Insert other masks you'd like to use here, if any
     }.get(_type)
 
@@ -177,9 +177,7 @@ def format_statistics(char: CharacterInfo) -> dict[str, int]:
             value = getattr(stats, x)
 
             ret_stats[x] = (
-                value.to_rounded()
-                if isinstance(value, Stats)
-                else value.to_percentage_symbol()
+                value.to_rounded() if isinstance(value, Stats) else value.to_percentage_symbol()
             )
 
     if len(ret_stats) > 8:
@@ -206,10 +204,7 @@ def format_statistics(char: CharacterInfo) -> dict[str, int]:
         for bonus in sorted(bonuses):
             if bonus != sorted(bonuses)[-1]:
                 for item in ret_stats:
-                    if (
-                        "ADD_HURT" in item
-                        and float(ret_stats[item].replace("%", "")) == bonus
-                    ):
+                    if "ADD_HURT" in item and float(ret_stats[item].replace("%", "")) == bonus:
                         ret_stats.pop(item)
                         break
             else:

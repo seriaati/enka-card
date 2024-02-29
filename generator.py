@@ -1,18 +1,23 @@
-import os
 import re
 import textwrap
-from datetime import datetime
 
 from enkanetwork import Assets, EnkaNetworkResponse, Language
 from enkanetwork.enum import DigitType, EquipmentsType
 from enkanetwork.model.character import CharacterInfo
-from enkanetwork.model.equipments import Equipments, EquipmentsType, EquipType
+from enkanetwork.model.equipments import EquipmentsType
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance
 
-from prop_reference import RARITY_REFERENCE, SUBST_ORDER
-from utils import (fade_asset_icon, fade_character_art, format_statistics,
-                   get_active_artifact_sets, get_font, get_stat_filename,
-                   open_image, scale_image)
+from .prop_reference import RARITY_REFERENCE, SUBST_ORDER
+from .utils import (
+    fade_asset_icon,
+    fade_character_art,
+    format_statistics,
+    get_active_artifact_sets,
+    get_font,
+    get_stat_filename,
+    open_image,
+    scale_image,
+)
 
 
 def generate_image(
@@ -28,7 +33,7 @@ def generate_image(
     BEIGE = (245, 222, 179)
 
     """ BACKGROUND SETUP """
-    background = open_image("attributes/Assets/default_enka_card.png")
+    background = open_image("enka_card/attributes/Assets/default_enka_card.png")
 
     background_rgb = {
         "Pyro": (186, 140, 131),
@@ -49,18 +54,16 @@ def generate_image(
 
     """ FIRST TRIMESTER """
     character_art = open_image(
-        path=f"attributes/Genshin/Gacha/{character.image.banner.filename}.png",
+        path=f"enka_card/attributes/Genshin/Gacha/{character.image.banner.filename}.png",
         asset_url=character.image.banner.url,
     )
     character_art = scale_image(character_art, fixed_percent=90)
-    character_art = character_art.crop(
-        (615, 85, character_art.width, character_art.height)
-    )
+    character_art = character_art.crop((615, 85, character_art.width, character_art.height))
     character_art = fade_character_art(character_art)
 
     foreground.paste(character_art, (0, 0), character_art)
 
-    character_shade = open_image("attributes/Assets/enka_character_shade.png")
+    character_shade = open_image("enka_card/attributes/Assets/enka_character_shade.png")
     foreground.paste(character_shade, (0, 0), character_shade)
 
     w = int(draw.textlength(f"{character.name}", font=get_font("normal", 30)))
@@ -128,7 +131,7 @@ def generate_image(
         font=get_font("normal", 23),
     )
 
-    friendship_icon = open_image("attributes/UI/COMPANIONSHIP.png")
+    friendship_icon = open_image("enka_card/attributes/UI/COMPANIONSHIP.png")
     friendship_icon = scale_image(friendship_icon, fixed_height=45)
     foreground.paste(friendship_icon, (34, 108), friendship_icon)
     draw.text(
@@ -139,20 +142,18 @@ def generate_image(
     )
 
     """ Constellations Section """
-    c_overlay = open_image("attributes/Assets/enka_constellation_overlay.png")
+    c_overlay = open_image("enka_card/attributes/Assets/enka_constellation_overlay.png")
     c_overlay = scale_image(c_overlay, fixed_height=75)
     ImageDraw.Draw(c_overlay).ellipse(
         (15, 15, 59, 59), fill=(50, 50, 50, 150), outline=background_rgb, width=2
     )
-    lock = open_image("attributes/UI/LOCKED.png", resize=(20, 25))
+    lock = open_image("enka_card/attributes/UI/LOCKED.png", resize=(20, 25))
 
     constellation_starting_index = 160
     for index, constellation in enumerate(character.constellations):
-        foreground.paste(
-            c_overlay, (25, constellation_starting_index + 60 * index), c_overlay
-        )
+        foreground.paste(c_overlay, (25, constellation_starting_index + 60 * index), c_overlay)
         constellation_icon = open_image(
-            path=f"attributes/Genshin/UI/{constellation.icon.filename}.png",
+            path=f"enka_card/attributes/Genshin/UI/{constellation.icon.filename}.png",
             asset_url=constellation.icon.url,
         )
         constellation_icon = scale_image(constellation_icon, fixed_height=45)
@@ -182,7 +183,7 @@ def generate_image(
         )
 
     """ Talents Section """
-    talent_overlay = open_image(f"attributes/Assets/enka_talent_overlay.png")
+    talent_overlay = open_image(f"enka_card/attributes/Assets/enka_talent_overlay.png")
     talent_overlay = scale_image(talent_overlay, fixed_height=80)
 
     for index, skill in enumerate(character.skills):
@@ -190,7 +191,7 @@ def generate_image(
             foreground.paste(talent_overlay, (430, 305 + 90 * index), talent_overlay)
 
         sk = open_image(
-            path=f"attributes/Genshin/UI/{skill.icon.filename}.png",
+            path=f"enka_card/attributes/Genshin/UI/{skill.icon.filename}.png",
             asset_url=skill.icon.url,
             resize=(50, 50),
         )
@@ -219,7 +220,7 @@ def generate_image(
 
     weapon = character.equipments[-1]
     weapon_image = open_image(
-        path=f"attributes/Genshin/Weapon/{weapon.detail.icon.filename}.png",
+        path=f"enka_card/attributes/Genshin/Weapon/{weapon.detail.icon.filename}.png",
         asset_url=weapon.detail.icon.url,
     )
     weapon_image = scale_image(weapon_image, fixed_height=125)
@@ -228,28 +229,22 @@ def generate_image(
 
     rarity_light = scale_image(
         open_image(
-            f"attributes/UI/{RARITY_REFERENCE[str(weapon.detail.rarity)]}_WEAPON_LIGHT.png"
+            f"enka_card/attributes/UI/{RARITY_REFERENCE[str(weapon.detail.rarity)]}_WEAPON_LIGHT.png"
         ),
         fixed_height=40,
     )
-    foreground.paste(
-        rarity_light, (int(625 - (rarity_light.size[0] / 2)), 130), rarity_light
-    )
+    foreground.paste(rarity_light, (int(625 - (rarity_light.size[0] / 2)), 130), rarity_light)
 
     rarity = scale_image(
-        open_image(f"attributes/UI/{RARITY_REFERENCE[str(weapon.detail.rarity)]}.png"),
+        open_image(f"enka_card/attributes/UI/{RARITY_REFERENCE[str(weapon.detail.rarity)]}.png"),
         fixed_height=25,
     )
 
     dark_shadow = ImageEnhance.Brightness(rarity).enhance(0)
-    foreground.paste(
-        dark_shadow, (int(625 - (rarity.size[0] / 2)), 135 + 2), dark_shadow
-    )
+    foreground.paste(dark_shadow, (int(625 - (rarity.size[0] / 2)), 135 + 2), dark_shadow)
     foreground.paste(rarity, (int(625 - (rarity.size[0] / 2)), 135), rarity)
 
-    weapon_length = int(
-        draw.textlength(f"{weapon.detail.name}", font=get_font("normal", 22))
-    )
+    weapon_length = int(draw.textlength(f"{weapon.detail.name}", font=get_font("normal", 22)))
 
     def draw_weapon_information(line_buffer: int = 0):
         # Weapon Main Stat
@@ -269,7 +264,7 @@ def generate_image(
             radius=4,
         )
 
-        image = open_image(f"attributes/UI/{get_stat_filename(mainstat.prop_id)}.png")
+        image = open_image(f"enka_card/attributes/UI/{get_stat_filename(mainstat.prop_id)}.png")
         icon_file = scale_image(image, fixed_height=30)
         icon_file = ImageEnhance.Brightness(icon_file).enhance(2)
 
@@ -306,16 +301,12 @@ def generate_image(
                 radius=4,
             )
 
-            image = open_image(
-                f"attributes/UI/{get_stat_filename(substat.prop_id)}.png"
-            )
+            image = open_image(f"enka_card/attributes/UI/{get_stat_filename(substat.prop_id)}.png")
             icon_file = scale_image(image, fixed_height=30)
             icon_file = ImageEnhance.Brightness(icon_file).enhance(2)
 
             for _ in range(3):
-                textground.paste(
-                    icon_file, (int(endpoint + 15), 63 + line_buffer), icon_file
-                )
+                textground.paste(icon_file, (int(endpoint + 15), 63 + line_buffer), icon_file)
 
             draw.text(
                 (endpoint + 55, 65 + line_buffer),
@@ -387,18 +378,14 @@ def generate_image(
         return
 
     if weapon_length < 295:
-        draw.text(
-            (690, 32), f"{weapon.detail.name}", font=get_font("normal", 22), anchor="lt"
-        )
+        draw.text((690, 32), f"{weapon.detail.name}", font=get_font("normal", 22), anchor="lt")
 
         draw_weapon_information(line_buffer=5)
     else:
         weapon_name = textwrap.wrap(f"{weapon.detail.name}", width=20)
 
         for index, line in enumerate(weapon_name):
-            draw.text(
-                (690, 32 + (index * 25)), line, font=get_font("normal", 22), anchor="lt"
-            )
+            draw.text((690, 32 + (index * 25)), line, font=get_font("normal", 22), anchor="lt")
 
         draw_weapon_information(line_buffer=28 * index)
 
@@ -406,14 +393,12 @@ def generate_image(
     statistic_buffer = 365 // len(all_stats)
     for index, item in enumerate(all_stats):
         """Draw Icon for Stat"""
-        image = open_image(f"attributes/UI/{get_stat_filename(item)}.png")
+        image = open_image(f"enka_card/attributes/UI/{get_stat_filename(item)}.png")
         icon_file = scale_image(image, fixed_height=30)
         icon_file = ImageEnhance.Brightness(icon_file).enhance(2)
 
         for _ in range(3):
-            foreground.paste(
-                icon_file, (555, 180 + (index * statistic_buffer)), icon_file
-            )
+            foreground.paste(icon_file, (555, 180 + (index * statistic_buffer)), icon_file)
 
         """ Write Stat Name """
         draw.text(
@@ -469,13 +454,16 @@ def generate_image(
 
     artifact_spacer = 119
     for artif_index, equipment_type in enumerate(positions):
-        artifact = next(filter(
-            lambda x: (
-                x.type == EquipmentsType.ARTIFACT and 
-                x.detail.artifact_type.value == equipment_type
-            ), 
-            character.equipments
-        ), None)
+        artifact = next(
+            filter(
+                lambda x: (
+                    x.type == EquipmentsType.ARTIFACT
+                    and x.detail.artifact_type.value == equipment_type
+                ),
+                character.equipments,
+            ),
+            None,
+        )
 
         ImageDraw.Draw(foreground, "RGBA").rounded_rectangle(
             (
@@ -493,16 +481,14 @@ def generate_image(
 
         artif_icon = fade_asset_icon(
             open_image(
-                path=f"attributes/Genshin/Artifact/{artifact.detail.icon.filename}.png",
+                path=f"enka_card/attributes/Genshin/Artifact/{artifact.detail.icon.filename}.png",
                 asset_url=artifact.detail.icon.url,
                 resize=(190, 190),
             ),
             "artifact",
         )
         artif_icon = artif_icon.crop((40, 40, 146, 146))
-        foreground.paste(
-            artif_icon, (1009, 14 + artifact_spacer * artif_index), artif_icon
-        )
+        foreground.paste(artif_icon, (1009, 14 + artifact_spacer * artif_index), artif_icon)
 
         draw.line(
             (
@@ -516,15 +502,13 @@ def generate_image(
         )
 
         image = open_image(
-            f"attributes/UI/{get_stat_filename(artifact.detail.mainstats.prop_id)}.png"
+            f"enka_card/attributes/UI/{get_stat_filename(artifact.detail.mainstats.prop_id)}.png"
         )
         icon_file = scale_image(image, fixed_height=30)
         icon_file = ImageEnhance.Brightness(icon_file).enhance(2)
 
         for _ in range(3):
-            foreground.paste(
-                icon_file, (1125, 25 + artifact_spacer * artif_index), icon_file
-            )
+            foreground.paste(icon_file, (1125, 25 + artifact_spacer * artif_index), icon_file)
 
         mainstat = artifact.detail.mainstats
         draw.text(
@@ -558,15 +542,13 @@ def generate_image(
 
         rarity = scale_image(
             open_image(
-                f"attributes/UI/{RARITY_REFERENCE[str(artifact.detail.rarity)]}.png"
+                f"enka_card/attributes/UI/{RARITY_REFERENCE[str(artifact.detail.rarity)]}.png"
             ),
             fixed_height=18,
         )
 
         dark_shadow = ImageEnhance.Brightness(rarity).enhance(0)
-        textground.paste(
-            dark_shadow, (1035, 90 + artifact_spacer * artif_index), dark_shadow
-        )
+        textground.paste(dark_shadow, (1035, 90 + artifact_spacer * artif_index), dark_shadow)
 
         textground.paste(rarity, (1035, 88 + artifact_spacer * artif_index), rarity)
 
@@ -577,7 +559,7 @@ def generate_image(
 
             position = {0: [0, 0], 1: [1, 0], 2: [0, 1], 3: [1, 1]}.get(index)
 
-            image = open_image(f"attributes/UI/{get_stat_filename(subst.prop_id)}.png")
+            image = open_image(f"enka_card/attributes/UI/{get_stat_filename(subst.prop_id)}.png")
             icon_file = scale_image(image, fixed_height=30)
             icon_file = ImageEnhance.Brightness(icon_file).enhance(2)
 
@@ -606,7 +588,7 @@ def generate_image(
     )
 
     flower_of_life = open_image(
-        "attributes/Assets/flower_of_life_icon.png", resize=(35, 35)
+        "enka_card/attributes/Assets/flower_of_life_icon.png", resize=(35, 35)
     )
     foreground.paste(flower_of_life, (562, 555), flower_of_life)
 
@@ -686,29 +668,7 @@ def generate_image(
             font=get_font("normal", 17),
         )
 
-    if not os.path.exists("output"):
-        os.makedirs("output")
-
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{character.name}_{timestamp}"
-
     foreground = Image.alpha_composite(foreground, textground)
-    Image.alpha_composite(background, foreground).save(
-        f"output/{filename}.png", format="png"
-    )
-
-    """ 
-    If you're using an async environment, might be worth mentioning
-    that it is ideal to save the image into a BytesIO object and then
-    return that buffer object instead. This way, you can send
-    the image to the user without having to save it to the disk.
-    
-    Sample Example:
-        output = BytesIO() # <- Create a buffer object
-        Image.alpha_composite(background, foreground).save(output, format="png") # <- Save image to the buffer object "output"
-        output.seek(0) # <- Move the pointer to the beginning of the buffer object
-        
-        return output
-    """
-
-    return
+    im = Image.alpha_composite(background, foreground)
+    im.show()
+    return im
