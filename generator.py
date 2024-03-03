@@ -670,5 +670,4 @@ def generate_image(
 
     foreground = Image.alpha_composite(foreground, textground)
     im = Image.alpha_composite(background, foreground)
-    im.show()
     return im
